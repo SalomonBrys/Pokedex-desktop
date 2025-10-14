@@ -1,0 +1,19 @@
+<resources>
+    <string name="langCode">en</string>
+
+    <string name="language">Language</string>
+    <string name="pokedex">Pokedex</string>
+    <string name="sort">Sort</string>
+
+    <string name="pleaseSelectPokemon">Please select a Pokemon</string>
+
+    <plurals name="description">
+        <item quantity="one">Description</item>
+        <item quantity="other">Descriptions</item>
+    </plurals>
+
+    <plurals name="move">
+        <item quantity="one">Move</item>
+        <item quantity="other">Moves</item>
+    </plurals>
+</resources>

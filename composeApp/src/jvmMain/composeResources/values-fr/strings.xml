@@ -1,0 +1,21 @@
+<resources>
+    <string name="langCode">fr</string>
+
+    <string name="language">Langue</string>
+    <string name="pokedex">Pokédex</string>
+    <string name="sort">Tri</string>
+
+    <string name="pleaseSelectPokemon">Veuillez sélectionner un Pokemon</string>
+
+    <plurals name="description">
+        <item quantity="zero">Description</item>
+        <item quantity="one">Description</item>
+        <item quantity="other">Descriptions</item>
+    </plurals>
+
+    <plurals name="move">
+        <item quantity="zero">Attaque</item>
+        <item quantity="one">Attaque</item>
+        <item quantity="other">Attaques</item>
+    </plurals>
+</resources>
