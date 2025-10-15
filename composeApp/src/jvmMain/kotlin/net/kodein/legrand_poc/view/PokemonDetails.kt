@@ -7,6 +7,8 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,9 +34,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import legrand_poc.composeapp.generated.resources.Res
 import legrand_poc.composeapp.generated.resources.description
+import legrand_poc.composeapp.generated.resources.favourites
 import legrand_poc.composeapp.generated.resources.language
 import legrand_poc.composeapp.generated.resources.move
 import legrand_poc.composeapp.generated.resources.pleaseSelectPokemon
@@ -52,11 +57,16 @@ class PokemonDetailsVM(
 
     data class Model(
         val details: PokemonDetails,
+        val isFavourite: Boolean,
         val species: PokemonSpecies,
         val versions: Map<PokemonRef<PokemonVersion>, PokemonVersion> = emptyMap(),
         val moves: List<PokemonMove> = emptyList(),
         val generations: Map<PokemonRef<PokemonVersionGroup>, PokemonGeneration> = emptyMap()
     )
+
+    sealed interface Intent {
+        data object ToggleFavourite : Intent
+    }
 
     private val mModel: MutableStateFlow<Model?> = MutableStateFlow(null)
     val model = mModel.asStateFlow()
@@ -66,7 +76,13 @@ class PokemonDetailsVM(
             val details: PokemonDetails = httpClient.getFromPokemonRef(ref)
             val species: PokemonSpecies = httpClient.getFromPokemonRef(details.species)
 
-            mModel.emit(Model(details, species))
+            mModel.emit(
+                Model(
+                    details = details,
+                    isFavourite = AppPreferences.datastore.data.first().get(AppPreferences.favouritePokemonsKey)?.contains(ref.name) ?: false,
+                    species = species,
+                )
+            )
 
             launch {
                 val versions = species.flavorTextEntries
@@ -88,6 +104,30 @@ class PokemonDetailsVM(
                     .associateWith { async { PokemonCache.get(PokemonCache.get(it).generation) } }
                     .mapValues { it.value.await() }
                 mModel.emit(mModel.value!!.copy(generations = generations))
+            }
+
+            launch {
+                AppPreferences.datastore.data.collect { prefs ->
+                    mModel.emit(mModel.value!!.copy(isFavourite = prefs[AppPreferences.favouritePokemonsKey]?.contains(ref.name) ?: false))
+                }
+            }
+        }
+    }
+
+    private suspend fun toggleFavourite() {
+        AppPreferences.datastore.edit { prefs ->
+            val favourites = prefs[AppPreferences.favouritePokemonsKey]?.toMutableSet() ?: mutableSetOf()
+            val isFavourite = ref.name in favourites
+            if (isFavourite) favourites.remove(ref.name)
+            else favourites.add(ref.name)
+            prefs[AppPreferences.favouritePokemonsKey] = favourites
+        }
+    }
+
+    fun process(intent: Intent) {
+        viewModelScope.launch {
+            when (intent) {
+                Intent.ToggleFavourite -> toggleFavourite()
             }
         }
     }
@@ -153,7 +193,10 @@ fun PokemonDetails(
                             .padding(16.dp)
                     )
                 } else {
-                    PokemonDetails(model!!)
+                    PokemonDetails(
+                        model = model!!,
+                        process = vm::process
+                    )
                 }
             }
         }
@@ -169,13 +212,28 @@ fun PokemonDetails(
 @Composable
 private fun PokemonDetails(
     model: PokemonDetailsVM.Model,
+    process: (PokemonDetailsVM.Intent) -> Unit,
 ) {
     val name = model.species.names.filterLang().firstOrNull()?.name
         ?: model.details.name.replaceFirstChar { it.titlecase() }
-    Text(
-        text = "${model.details.id}. $name",
-        style = MaterialTheme.typography.headlineLarge,
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = { process(PokemonDetailsVM.Intent.ToggleFavourite) },
+        ) {
+            Icon(
+                imageVector =
+                    if (model.isFavourite) Icons.Filled.Favorite
+                    else Icons.Filled.FavoriteBorder,
+                contentDescription = stringResource(Res.string.favourites),
+            )
+        }
+        Text(
+            text = "${model.details.id}. $name",
+            style = MaterialTheme.typography.headlineLarge,
+        )
+    }
     AsyncImage(
         model = model.details.sprites.other?.officialArtwork?.frontDefault,
         contentDescription = null,

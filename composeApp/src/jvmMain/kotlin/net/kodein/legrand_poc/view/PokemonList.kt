@@ -11,12 +11,16 @@ import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -26,8 +30,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import legrand_poc.composeapp.generated.resources.Res
+import legrand_poc.composeapp.generated.resources.favourites
 import legrand_poc.composeapp.generated.resources.pokedex
 import legrand_poc.composeapp.generated.resources.sort
+import net.kodein.legrand_poc.business.AppPreferences
 import net.kodein.legrand_poc.business.PokemonDetails
 import net.kodein.legrand_poc.business.PokemonRef
 import net.kodein.legrand_poc.business.PokemonResourceList
@@ -36,32 +42,52 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
-class PokemonListViewModel : ViewModel() {
+class PokemonListVM : ViewModel() {
 
-    private val mRefs = MutableStateFlow<List<PokemonRef<PokemonDetails>>?>(null)
-    val refs = mRefs.asStateFlow()
+    data class Model(
+        val pokemons: List<IndexedValue<PokemonRef<PokemonDetails>>> = emptyList(),
+        val favourites: Set<String> = emptySet(),
+    )
 
-    private val mSorted = MutableStateFlow(false)
-    val sorted = mSorted.asStateFlow()
+    sealed interface Intent {
+        data class ToggleFavourite(val ref: PokemonRef<PokemonDetails>) : Intent
+    }
+
+    private val mModel = MutableStateFlow(Model())
+    val model = mModel.asStateFlow()
 
     init {
         viewModelScope.launch {
-            load(sorted = mSorted.value)
+            val results = httpClient.get("https://pokeapi.co/api/v2/pokemon?limit=100000")
+                .body<PokemonResourceList<PokemonRef<PokemonDetails>>>().results.withIndex()
+            mModel.emit(
+                mModel.value.copy(pokemons = results.toList())
+            )
+        }
+        viewModelScope.launch {
+            AppPreferences.datastore.data.collect { prefs ->
+                mModel.emit(
+                    mModel.value.copy(favourites = prefs[AppPreferences.favouritePokemonsKey] ?: emptySet())
+                )
+            }
         }
     }
 
-    private suspend fun load(sorted: Boolean) {
-        val result: PokemonResourceList<PokemonRef<PokemonDetails>> = httpClient.get("https://pokeapi.co/api/v2/pokemon?limit=100000").body()
-        mRefs.emit(
-            if (sorted) result.results.sortedBy { it.name.lowercase() }
-            else result.results
-        )
+    private suspend fun toggleFavourite(ref: PokemonRef<PokemonDetails>) {
+        AppPreferences.datastore.edit { prefs ->
+            val favourites = prefs[AppPreferences.favouritePokemonsKey]?.toMutableSet() ?: mutableSetOf()
+            val isFavourite = ref.name in favourites
+            if (isFavourite) favourites.remove(ref.name)
+            else favourites.add(ref.name)
+            prefs[AppPreferences.favouritePokemonsKey] = favourites
+        }
     }
 
-    fun sort(sorted: Boolean) {
-        mSorted.value = sorted
+    fun process(intent: Intent) {
         viewModelScope.launch {
-            load(sorted = sorted)
+            when (intent) {
+                is Intent.ToggleFavourite -> toggleFavourite(intent.ref)
+            }
         }
     }
 }
@@ -71,28 +97,30 @@ fun PokemonList(
     selectedPokemon: PokemonRef<PokemonDetails>?,
     onSelectPokemon: (PokemonRef<PokemonDetails>) -> Unit,
 ) {
-    val vm = viewModel { PokemonListViewModel() }
-    val refs by vm.refs.collectAsState()
-    val sorted by vm.sorted.collectAsState()
+    val vm = viewModel { PokemonListVM() }
+    val model by vm.model.collectAsState()
 
     PokemonList(
-        list = refs,
+        model = model,
+        process = vm::process,
         selectedPokemon = selectedPokemon,
         onSelectPokemon = onSelectPokemon,
-        sorted = sorted,
-        sort = vm::sort,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PokemonList(
-    list: List<PokemonRef<PokemonDetails>>?,
+    model: PokemonListVM.Model,
+    process: (PokemonListVM.Intent) -> Unit,
     selectedPokemon: PokemonRef<PokemonDetails>?,
     onSelectPokemon: (PokemonRef<PokemonDetails>) -> Unit,
-    sorted: Boolean,
-    sort: (Boolean) -> Unit,
 ) {
+    var sorted by remember { mutableStateOf(false) }
+    val pokemons = remember(model.pokemons, sorted) {
+        if (sorted) model.pokemons.sortedBy { it.value.name }
+        else model.pokemons.sortedBy { it.index }
+    }
     Column {
         TopAppBar(
             title = { Text(stringResource(Res.string.pokedex)) },
@@ -116,7 +144,7 @@ private fun PokemonList(
                                     Text("Par nom", Modifier.padding(start = 8.dp))
                                 }
                             },
-                            onClick = { sort(true) ; menuExpanded = false },
+                            onClick = { sorted = true ; menuExpanded = false },
                         )
                         DropdownMenuItem(
                             text = {
@@ -128,7 +156,7 @@ private fun PokemonList(
                                     Text("Par id", Modifier.padding(start = 8.dp))
                                 }
                             },
-                            onClick = { sort(false) ; menuExpanded = false },
+                            onClick = { sorted = false ; menuExpanded = false },
                         )
                     }
                 }
@@ -138,7 +166,7 @@ private fun PokemonList(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            if (list == null) {
+            if (pokemons.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -150,20 +178,42 @@ private fun PokemonList(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    items(list) { pokemon ->
+                    items(pokemons) { (index, pokemon) ->
                         Column {
-                            Text(
-                                text = pokemon.name.replaceFirstChar { it.titlecase() },
-                                style = MaterialTheme.typography.titleMedium,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .clickable { onSelectPokemon(pokemon) }
                                     .background(
                                         if (pokemon == selectedPokemon) MaterialTheme.colorScheme.primaryContainer
                                         else Color.Transparent
                                     )
-                                    .padding(horizontal = 8.dp, vertical = 8.dp)
-                                    .fillMaxWidth()
-                            )
+                                    .padding(start = 4.dp, end = 16.dp)
+                            ) {
+                                IconButton(
+                                    onClick = { process(PokemonListVM.Intent.ToggleFavourite(pokemon)) },
+                                ) {
+                                    Icon(
+                                        imageVector =
+                                            if (pokemon.name in model.favourites) Icons.Filled.Favorite
+                                            else Icons.Filled.FavoriteBorder,
+                                        contentDescription = stringResource(Res.string.favourites),
+                                    )
+                                }
+                                Text(
+                                    text = pokemon.name.replaceFirstChar { it.titlecase() },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                )
+                                Text(
+                                    text = index.toString(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.outline,
+                                )
+                            }
                             HorizontalDivider()
                         }
                     }
@@ -171,8 +221,9 @@ private fun PokemonList(
                 VerticalScrollbar(
                     adapter = rememberScrollbarAdapter(lazyListState),
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
                         .fillMaxHeight()
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 4.dp)
                 )
             }
         }
@@ -185,11 +236,10 @@ private fun PokemonList(
 private fun PokemonListLoadingPreview() {
     Surface(Modifier.fillMaxSize()) {
         PokemonList(
-            list = null,
+            model = PokemonListVM.Model(),
+            process = {},
             selectedPokemon = null,
             onSelectPokemon = {},
-            sorted = true,
-            sort = {},
         )
     }
 }
@@ -199,16 +249,17 @@ private fun PokemonListLoadingPreview() {
 private fun PokemonListPreview() {
     Surface(Modifier.fillMaxSize()) {
         PokemonList(
-            list = listOf(
-                PokemonRef("bulbasaur", "https://pokeapi.co/api/v2/pokemon/1/"),
-                PokemonRef("charmander", "https://pokeapi.co/api/v2/pokemon/4/"),
-                PokemonRef("pikachu", "https://pokeapi.co/api/v2/pokemon/25/"),
-                PokemonRef("squirtle", "https://pokeapi.co/api/v2/pokemon/7/"),
+            model = PokemonListVM.Model(
+                pokemons = listOf(
+                    IndexedValue(1, PokemonRef("bulbasaur", "https://pokeapi.co/api/v2/pokemon/1/")),
+                    IndexedValue(4, PokemonRef("charmander", "https://pokeapi.co/api/v2/pokemon/4/")),
+                    IndexedValue(2, PokemonRef("pikachu", "https://pokeapi.co/api/v2/pokemon/25/")),
+                    IndexedValue(7, PokemonRef("squirtle", "https://pokeapi.co/api/v2/pokemon/7/")),
+                ),
             ),
+            process = {},
             selectedPokemon = PokemonRef("squirtle", "https://pokeapi.co/api/v2/pokemon/7/"),
             onSelectPokemon = {},
-            sorted = true,
-            sort = {},
         )
     }
 }

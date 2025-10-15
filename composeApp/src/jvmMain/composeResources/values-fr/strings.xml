@@ -4,6 +4,7 @@
     <string name="language">Langue</string>
     <string name="pokedex">Pokédex</string>
     <string name="sort">Tri</string>
+    <string name="favourites">Favoris</string>
 
     <string name="pleaseSelectPokemon">Veuillez sélectionner un Pokemon</string>
 

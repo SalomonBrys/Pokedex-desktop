@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.ktor.serialization.json)
             implementation(libs.coil)
             implementation(libs.coil.network.ktor)
+            implementation(libs.androidx.datastore)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
