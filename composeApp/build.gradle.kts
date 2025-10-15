@@ -47,6 +47,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "net.kodein.legrand_poc"
             packageVersion = "1.0.0"
+
+            windows {
+                iconFile.set(file("src/jvmMain/resources/icon.ico"))
+            }
         }
     }
 }
