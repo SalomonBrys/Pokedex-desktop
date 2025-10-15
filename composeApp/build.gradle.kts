@@ -48,6 +48,12 @@ compose.desktop {
             packageName = "net.kodein.legrand_poc"
             packageVersion = "1.0.0"
 
+            macOS {
+                iconFile.set(file("src/jvmMain/resources/icon.icns"))
+            }
+            linux {
+                iconFile.set(file("src/jvmMain/resources/icon.png"))
+            }
             windows {
                 iconFile.set(file("src/jvmMain/resources/icon.ico"))
             }
