@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization) apply false
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.compose.hotReload) apply false
+    alias(libs.plugins.storytale) apply false
 }

@@ -34,7 +34,7 @@ fun TreeNode(
                 modifier = Modifier
                     .rotate(animateFloatAsState(if (expanded) 90f else 0f).value)
             )
-            Spacer(Modifier.width(8.dp))
+//            Spacer(Modifier.width(8.dp))
             title()
         }
         AnimatedVisibility(
@@ -57,7 +57,7 @@ fun TreeLeaf(
 ) {
     Box(
         modifier
-            .padding(start = 16.dp)
+            .padding(start = 24.dp)
     ) {
         content()
     }
