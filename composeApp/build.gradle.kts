@@ -36,9 +36,12 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.androidx.datastore)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(compose.uiTest)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(compose.desktop.components.splitPane)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.engine.okhttp)
         }

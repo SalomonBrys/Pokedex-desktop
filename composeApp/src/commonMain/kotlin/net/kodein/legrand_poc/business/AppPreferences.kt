@@ -9,7 +9,6 @@ import kotlin.io.path.createDirectories
 object AppPreferences {
     val datastore = PreferenceDataStoreFactory.createWithPath {
         "${dataStoreDir()}/app.preferences_pb".toPath()
-            .also { println("datastore path: $it") }
     }
 
     val favouritePokemonsKey = stringSetPreferencesKey("favourite_pokemons")

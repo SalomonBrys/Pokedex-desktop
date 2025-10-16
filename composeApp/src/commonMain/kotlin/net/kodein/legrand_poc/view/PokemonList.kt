@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
@@ -177,6 +178,7 @@ private fun PokemonList(
                     state = lazyListState,
                     modifier = Modifier
                         .fillMaxSize()
+                        .testTag("pokemonList")
                 ) {
                     items(pokemons) { (index, pokemon) ->
                         Column {
@@ -207,6 +209,7 @@ private fun PokemonList(
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier
                                         .weight(1f)
+                                        .testTag("pokemonName")
                                 )
                                 Text(
                                     text = index.toString(),

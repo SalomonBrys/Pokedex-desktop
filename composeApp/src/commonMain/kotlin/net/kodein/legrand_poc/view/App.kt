@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
@@ -16,9 +17,8 @@ import kotlinx.coroutines.launch
 import net.kodein.legrand_poc.business.PokemonDetails
 import net.kodein.legrand_poc.business.PokemonRef
 import net.kodein.legrand_poc.util.ScopedViewModels
-import org.jetbrains.compose.splitpane.ExperimentalSplitPaneApi
 
-@OptIn(ExperimentalSplitPaneApi::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun App() {
     MaterialTheme {
@@ -55,53 +55,19 @@ fun App() {
                         }
                     }
                 },
-//                paneExpansionDragHandle = { state ->
+                paneExpansionDragHandle = { state ->
 //                    val interactionSource = remember { MutableInteractionSource() }
-//                    VerticalDragHandle(
+                    VerticalDragHandle(
 //                        interactionSource = interactionSource,
-//                        modifier = Modifier
+                        modifier = Modifier
 //                            .paneExpansionDraggable(
 //                                state,
 //                                LocalMinimumInteractiveComponentSize.current,
 //                                interactionSource
 //                            ),
-//                    )
-//                }
+                    )
+                }
             )
-
-//            var selectedPokemon: PokemonRef<PokemonDetails>? by remember { mutableStateOf(null) }
-//            HorizontalSplitPane {
-//                first(320.dp) {
-//                    PokemonList(
-//                        selectedPokemon = selectedPokemon,
-//                        onSelectPokemon = { selectedPokemon = it },
-//                    )
-//                }
-//                second(512.dp) {
-//                    ScopedViewModels(selectedPokemon) {
-//                        PokemonDetails(selectedPokemon)
-//                    }
-//                }
-//                splitter {
-//                    visiblePart {
-//                        Box(
-//                            Modifier
-//                                .width(1.dp)
-//                                .fillMaxHeight()
-//                                .background(MaterialTheme.colorScheme.onBackground)
-//                        )
-//                    }
-//                    handle {
-//                        Box(
-//                            Modifier
-//                                .markAsHandle()
-//                                .pointerHoverIcon(PointerIcon(Cursor(Cursor.E_RESIZE_CURSOR)))
-//                                .width(8.dp)
-//                                .fillMaxHeight()
-//                        )
-//                    }
-//                }
-//            }
         }
     }
 }
