@@ -1,8 +1,9 @@
 [versions]
 androidx-datastore = "1.1.7"
-androidx-lifecycle = "2.9.4"
-compose = "1.9.0"
+androidx-lifecycle = "2.9.5"
+compose = "1.9.1"
 compose-hotReload = "1.0.0-rc02"
+material3-adaptive = "1.2.0-alpha05"
 coil = "3.3.0"
 kotlin = "2.1.21"
 kotlinx-coroutines = "1.10.2"
@@ -16,6 +17,8 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 coil = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+material3-adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "material3-adaptive" }
+material3-adaptive-navigation = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation", version.ref = "material3-adaptive" }
 
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

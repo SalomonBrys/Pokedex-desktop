@@ -18,12 +18,12 @@ object AppLanguage {
 
     init {
         if (lang !in availableLanguages) {
-            lang = "en"
+            set("en")
         }
     }
 
     fun set(lang: String) {
-        Locale.setDefault(Locale.forLanguageTag(lang))
+//        Locale.setDefault(Locale.forLanguageTag(lang))
         this.lang = lang
     }
 

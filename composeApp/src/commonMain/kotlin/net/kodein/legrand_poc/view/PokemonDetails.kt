@@ -6,6 +6,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -138,6 +140,7 @@ class PokemonDetailsVM(
 @Composable
 fun PokemonDetails(
     ref: PokemonRef<PokemonDetails>?,
+    back: (() -> Unit)?,
 ) {
     Box {
         val scrollState = rememberScrollState()
@@ -150,6 +153,15 @@ fun PokemonDetails(
         ) {
             TopAppBar(
                 title = { Text(ref?.name?.replaceFirstChar { it.titlecase() } ?: "") },
+                navigationIcon = {
+                    if (back != null) {
+                        IconButton(
+                            onClick = { back() }
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+                        }
+                    }
+                },
                 actions = {
                     Box {
                         var menuExpanded by remember { mutableStateOf(false) }
