@@ -23,7 +23,7 @@ object AppLanguage {
     }
 
     fun set(lang: String) {
-//        Locale.setDefault(Locale.forLanguageTag(lang))
+        Locale.setDefault(Locale.forLanguageTag(lang))
         this.lang = lang
     }
 
